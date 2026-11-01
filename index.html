@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Exposé-Rechner</title>
+<meta name="description" content="Immobilien aus dem Exposé kalkulieren – mit deinem persönlichen Steuersatz.">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#f2f3f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#090c11" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Exposé">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<!--STYLE-START-->
+<style>
+/* Layout: eine Spalte (max. 720px), große Seitentitel je Tab, schwebende Tab-Leiste, dunkle Ergebnis-Karte als Blickfang */
+:root{
+  --bg:#f2f3f5; --surface:#ffffff; --surface2:#f5f6f8; --line:rgb(15 23 42 / .08);
+  --fg:#0b1220; --muted:#667085; --accent:#087f5f; --accent-ink:#ffffff; --accent-soft:#e2f3ec;
+  --hero1:#0f1b2d; --hero2:#0a111c; --hero-fg:#f4f7fb; --hero-muted:#9aa6b8; --hero-tile:rgb(255 255 255 / .06); --hero-pos:#4ade80; --hero-neg:#fb8a7e;
+  --c1:#1170a8; --c2:#d4622a;
+  --good:#16794a; --good-soft:#ddf3e6; --warn:#946000; --warn-soft:#fdf0d5; --bad:#b4372b; --bad-soft:#fbe2de;
+  --scrim:rgb(10 17 28 / .45);
+  --sh1:0 1px 2px rgb(16 24 40 / .04), 0 8px 24px rgb(16 24 40 / .06);
+  --sh2:0 10px 40px rgb(16 24 40 / .16);
+  --font:"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  --mono:var(--font);
+  --tabbar:64px; --ease:cubic-bezier(.2,.8,.2,1); --r:22px; --r2:14px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#090c11; --surface:#12161d; --surface2:#1a1f28; --line:rgb(255 255 255 / .07);
+  --fg:#eef1f5; --muted:#8b95a5; --accent:#3ccf98; --accent-ink:#04261a; --accent-soft:#103227;
+  --hero1:#14302a; --hero2:#10161e; --hero-tile:rgb(255 255 255 / .05);
+  --c1:#3a8fc4; --c2:#cf6b37;
+  --good:#5fd08a; --good-soft:#143323; --warn:#f0b54a; --warn-soft:#3a2c10; --bad:#f07a6c; --bad-soft:#3d1c18;
+  --scrim:rgb(0 0 0 / .6); --sh1:0 1px 0 rgb(255 255 255 / .03) inset, 0 8px 24px rgb(0 0 0 / .35); --sh2:0 10px 40px rgb(0 0 0 / .6);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#090c11; --surface:#12161d; --surface2:#1a1f28; --line:rgb(255 255 255 / .07);
+  --fg:#eef1f5; --muted:#8b95a5; --accent:#3ccf98; --accent-ink:#04261a; --accent-soft:#103227;
+  --hero1:#14302a; --hero2:#10161e; --hero-tile:rgb(255 255 255 / .05);
+  --c1:#3a8fc4; --c2:#cf6b37;
+  --good:#5fd08a; --good-soft:#143323; --warn:#f0b54a; --warn-soft:#3a2c10; --bad:#f07a6c; --bad-soft:#3d1c18;
+  --scrim:rgb(0 0 0 / .6); --sh1:0 1px 0 rgb(255 255 255 / .03) inset, 0 8px 24px rgb(0 0 0 / .35); --sh2:0 10px 40px rgb(0 0 0 / .6);
+  color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--font);font-feature-settings:"tnum";-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+
+/* Kopfzeile */
+.top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:saturate(1.6) blur(18px);-webkit-backdrop-filter:saturate(1.6) blur(18px);
+  padding-top:env(safe-area-inset-top,0px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top .in{max-width:720px;margin:0 auto;padding-block:10px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.top h1{font-size:15px;margin:0;font-weight:700;letter-spacing:-.01em;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.top h1::before{content:"";width:22px;height:22px;border-radius:7px;background:linear-gradient(140deg,var(--accent),color-mix(in srgb,var(--accent) 55%,var(--c1)));box-shadow:0 2px 6px color-mix(in srgb,var(--accent) 35%,transparent)}
+.top small{color:var(--fg);font-size:12px;font-weight:600;background:var(--surface);padding:5px 10px;border-radius:999px;box-shadow:var(--sh1);white-space:nowrap}
+@media (max-width:359px){.top small{display:none}}
+
+main{max-width:720px;margin:0 auto;padding-block:6px calc(var(--tabbar) + env(safe-area-inset-bottom,0px) + 40px);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:14px}
+section{display:grid;gap:14px;animation:viewIn .35s var(--ease)}
+@keyframes viewIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.ptitle{display:grid;gap:2px;padding:8px 4px 2px}
+.ptitle h1{font-size:32px;line-height:1.1;font-weight:800;letter-spacing:-.03em;margin:0}
+.ptitle p{margin:0;color:var(--muted);font-size:14.5px}
+
+.card{background:var(--surface);border-radius:var(--r);padding:18px;display:grid;gap:14px;min-width:0;box-shadow:var(--sh1)}
+h2{font-size:18px;margin:0;font-weight:750;letter-spacing:-.015em;text-wrap:balance}
+h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:4px 0 0;font-weight:700}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.between{justify-content:space-between}
+input,select,textarea{font:inherit;font-size:16px;color:var(--fg);background:var(--surface2);border:1.5px solid transparent;border-radius:12px;padding:11px 12px;width:100%;min-width:0;transition:border-color .2s,background-color .3s,box-shadow .2s}
+input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
+textarea{min-height:96px;resize:vertical;font-size:15px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);background:var(--surface);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 16%,transparent)}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.btn{border:0;background:var(--surface2);color:var(--fg);padding:12px 18px;border-radius:999px;font:700 15px var(--font);cursor:pointer;min-height:46px;transition:transform .15s var(--ease),background-color .2s,box-shadow .2s;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn:active{transform:scale(.96)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 30%,transparent)}
+.btn.block{width:100%}
+.btn:disabled{opacity:.55}
+.btn.ghost{background:transparent;color:var(--accent);padding-inline:8px;box-shadow:none}
+.btn.small{min-height:38px;padding:8px 14px;font-size:14px}
+.linkrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.attach{display:flex;gap:8px;flex-wrap:wrap}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12.5px;font-weight:600;background:var(--accent-soft);color:var(--accent);padding:5px 11px;border-radius:999px;display:inline-flex;gap:6px;align-items:center;animation:pop .25s var(--ease)}
+.chip button{border:0;background:none;color:inherit;font-size:15px;padding:0;cursor:pointer}
+@keyframes pop{from{transform:scale(.8);opacity:0}to{transform:none;opacity:1}}
+.status{font-size:13.5px;color:var(--muted)}
+.status.err{color:var(--bad)}
+.notes{margin:0;padding-left:18px;font-size:13.5px;color:var(--muted);display:grid;gap:3px}
+.note{font-size:13px;color:var(--muted);margin:0}
+.tag{font-size:11.5px;padding:3px 9px;border-radius:999px;background:var(--warn-soft);color:var(--warn);font-weight:700}
+.tag.scen{background:var(--accent-soft);color:var(--accent)}
+
+/* Scan beim Import */
+.scan{display:grid;gap:12px;padding:14px;border-radius:var(--r2);background:var(--surface2);position:relative;overflow:hidden}
+.scan::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,color-mix(in srgb,var(--accent) 14%,transparent) 50%,transparent 70%);transform:translateX(-100%);animation:sweep 1.6s linear infinite}
+.scan.done::after{display:none}
+@keyframes sweep{to{transform:translateX(100%)}}
+.step{display:flex;gap:12px;align-items:center;font-size:14.5px;color:var(--muted);transition:color .3s}
+.step i{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;flex:none;transition:all .3s var(--ease)}
+.step.active{color:var(--fg);font-weight:700}
+.step.active i{border-color:var(--accent);border-right-color:transparent;animation:spin .8s linear infinite}
+.step.ok{color:var(--fg)}
+.step.ok i{background:var(--accent);border-color:var(--accent);animation:none}
+.step.ok i::after{content:"";width:6px;height:10px;border:solid var(--accent-ink);border-width:0 2px 2px 0;transform:translateY(-1px) rotate(45deg)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Ergebnis-Karte (dunkel) */
+.hero{background:radial-gradient(120% 90% at 100% 0%,color-mix(in srgb,var(--accent) 28%,transparent) 0%,transparent 55%),linear-gradient(165deg,var(--hero1),var(--hero2));color:var(--hero-fg);box-shadow:var(--sh2)}
+.hero h2{color:var(--hero-fg)}
+.hero .note,.hero .verdict,.hero .sub,.hero .kpi span,.hero .kpi small{color:var(--hero-muted)}
+.hero .tag{background:rgb(255 255 255 / .1);color:var(--hero-fg)}
+.hero .tag.scen{background:color-mix(in srgb,var(--accent) 30%,transparent);color:#fff}
+.hero a{color:#9ff0cf}
+.hero .pos{color:var(--hero-pos)!important} .hero .neg{color:var(--hero-neg)!important}
+.scorerow{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center}
+.ring{width:112px;height:112px;position:relative}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .trk{fill:none;stroke:rgb(255 255 255 / .1);stroke-width:9}
+.ring .arc{fill:none;stroke:var(--accent);stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset 1.1s var(--ease),stroke .4s}
+.ring.good .arc{stroke:#4ade80;color:rgb(74 222 128 / .5)} .ring.warn .arc{stroke:#fbbf24;color:rgb(251 191 36 / .45)} .ring.bad .arc{stroke:#fb7185;color:rgb(251 113 133 / .45)}
+.ring .mid{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring .mid b{font:800 34px/1 var(--font);letter-spacing:-.03em}
+.ring .mid span{font-size:11px;color:var(--hero-muted)}
+.grade{font-size:17px;font-weight:750;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px}
+.pill.good{background:var(--good-soft);color:var(--good)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill:not(.good):not(.warn):not(.bad){background:var(--surface2);color:var(--fg)}
+.hero .pill.good{background:rgb(74 222 128 / .16);color:#86efac} .hero .pill.warn{background:rgb(251 191 36 / .16);color:#fcd34d} .hero .pill.bad{background:rgb(251 113 133 / .16);color:#fda4af}
+.hero .pill:not(.good):not(.warn):not(.bad){background:rgb(255 255 255 / .1);color:var(--hero-fg)}
+.verdict{font-size:14.5px;margin:4px 0 0}
+.subs{display:grid;gap:9px}
+.sub{display:grid;grid-template-columns:96px minmax(0,1fr) 30px;gap:10px;align-items:center;font-size:12.5px}
+.sub .bar{height:6px;border-radius:3px;background:rgb(255 255 255 / .1);overflow:hidden}
+.sub .bar i{display:block;height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 70%,#fff),var(--accent));transition:width 1s var(--ease)}
+.sub b{font-weight:700;color:var(--hero-fg);text-align:right;font-size:12.5px}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (min-width:600px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.kpi{background:var(--hero-tile);border-radius:16px;padding:12px 14px;display:grid;gap:2px;min-width:0}
+.kpi span{font-size:12px;font-weight:600}
+.kpi b{font-weight:750;font-size:19px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .3s}
+.kpi.hl b{font-size:23px}
+.kpi small{font-size:12px;min-height:1em}
+.pos{color:var(--good)!important} .neg{color:var(--bad)!important}
+
+/* Wasserfall */
+.wf{position:relative;height:218px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;padding-block:18px}
+.wf .col{position:relative;height:100%}
+.wf .bar{position:absolute;left:6%;right:6%;border-radius:7px;transition:bottom .7s var(--ease),height .7s var(--ease);cursor:pointer}
+.wf .bar.in{background:var(--c1)} .wf .bar.out{background:var(--c2)} .wf .bar.res{background:var(--fg)}
+.wf .val{position:absolute;left:-6px;right:-6px;text-align:center;font:700 10.5px var(--font);color:var(--fg);transition:bottom .7s var(--ease);white-space:nowrap}
+.wf .zero{position:absolute;left:0;right:0;border-top:1px dashed var(--muted);opacity:.5;transition:bottom .7s var(--ease)}
+.wfl{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;font-size:10.5px;font-weight:600;color:var(--muted);text-align:center}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);font-weight:600}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+/* Regler */
+.sl{display:grid;gap:2px}
+.sl .h{display:flex;justify-content:space-between;font-size:14px;font-weight:600}
+.sl .h b{font-weight:750}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:32px;background:transparent;padding:0;border:0;box-shadow:none}
+input[type=range]:focus{box-shadow:none;background:transparent}
+input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(to right,var(--accent) var(--p,50%),var(--surface2) var(--p,50%))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;margin-top:-10px;border-radius:50%;background:#fff;border:0;box-shadow:0 2px 8px rgb(0 0 0 / .25),0 0 0 1px rgb(0 0 0 / .04);transition:transform .15s}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.15)}
+input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:var(--surface2)}
+input[type=range]::-moz-range-progress{height:8px;border-radius:4px;background:var(--accent)}
+input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:#fff;border:0;box-shadow:0 2px 8px rgb(0 0 0 / .25)}
+.delta{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-radius:var(--r2);background:var(--surface2);font-size:14px;font-weight:600}
+.delta b{font-size:22px;font-weight:800;letter-spacing:-.02em;white-space:nowrap}
+.target{display:grid;gap:8px;padding:14px;border-radius:var(--r2);background:var(--accent-soft)}
+.target .t{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:14px}
+.target .t b{font-weight:750}
+.target .btn{background:var(--surface)}
+
+/* Diagramme */
+.chart{position:relative}
+.chart svg{width:100%;height:auto;display:block;touch-action:pan-y}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .axis{fill:var(--muted);font:600 10.5px var(--font)}
+.chart .lab{font:700 11px var(--font);fill:var(--fg)}
+.chart .l1{fill:none;stroke:var(--c1);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.chart .l2{fill:none;stroke:var(--c2);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.chart .gap{fill:var(--c1);opacity:.12}
+.chart .draw{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1.3s var(--ease) forwards}
+.chart .fade{opacity:0;animation:fadeIn .8s .5s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fadeIn{to{opacity:.12}}
+.chart .xh{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
+.chart .dot1{fill:var(--c1);stroke:var(--surface);stroke-width:2.5}
+.chart .dot2{fill:var(--c2);stroke:var(--surface);stroke-width:2.5}
+.tip{position:absolute;pointer-events:none;background:var(--fg);color:var(--bg);padding:8px 11px;border-radius:12px;font-size:12px;line-height:1.4;white-space:nowrap;z-index:3;transform:translate(-50%,-100%);transition:opacity .12s;box-shadow:var(--sh2)}
+.tip b{font-weight:700}
+
+/* Formulare */
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (min-width:600px){.fields{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.f{display:grid;gap:5px;min-width:0}
+.f label{font-size:12.5px;font-weight:600;color:var(--muted);display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 6px}
+.f label em{font-style:normal;font-size:11.5px;font-weight:600;white-space:nowrap;opacity:.8}
+.f.wide{grid-column:1/-1}
+.f.flash input,.f.flash select{animation:flash 1.4s var(--ease) both}
+@keyframes flash{0%{transform:scale(.97)}25%{background:var(--accent-soft);border-color:var(--accent);transform:none}100%{}}
+
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+td,th{padding:8px 6px;text-align:right;white-space:nowrap;font-size:13.5px}
+th{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--line)}
+td:first-child,th:first-child{text-align:left}
+td{font-size:13px;font-weight:600;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}
+.calc td:first-child{font-size:13.5px;font-weight:500;color:var(--muted);white-space:normal}
+.calc tr.sum td{font-weight:800;color:var(--fg)}
+.scroll{overflow-x:auto;min-width:0;-webkit-overflow-scrolling:touch}
+details{border-radius:var(--r2)}
+details summary{cursor:pointer;font-weight:700;font-size:15px;padding-block:4px;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"";width:8px;height:8px;border:solid var(--muted);border-width:0 2px 2px 0;transform:rotate(45deg);transition:transform .25s var(--ease);margin-right:4px}
+details[open] summary::after{transform:rotate(-135deg)}
+
+/* Objekte & Vergleich */
+.deal{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;padding:14px;background:var(--surface2);border-radius:18px;align-items:center;animation:viewIn .35s var(--ease) both;transition:box-shadow .2s}
+.deal.sel{box-shadow:0 0 0 2px var(--accent)}
+.deal .t{font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.deal .m{font-size:12.5px;color:var(--muted);font-weight:500}
+.deal .acts{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}
+.deal .btn{background:var(--surface)}
+.mini{width:54px;height:54px;position:relative}
+.mini svg{width:100%;height:100%;transform:rotate(-90deg)}
+.mini b{position:absolute;inset:0;display:grid;place-items:center;font:800 16px var(--font)}
+.cmp td.best{color:var(--accent);font-weight:800}
+.cmp td:first-child{font-size:13px;font-weight:500;color:var(--muted);white-space:normal;min-width:96px}
+.cmp td{font-size:12.5px}
+.cmp td.best::after{content:" ★"}
+.cmp th{white-space:normal;min-width:92px;max-width:130px;vertical-align:bottom;text-transform:none;letter-spacing:0;font-size:12px;color:var(--fg)}
+.cmpbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tabbar) + env(safe-area-inset-bottom,0px) + 24px);z-index:7;display:flex;gap:10px;align-items:center;background:var(--fg);color:var(--bg);padding:8px 8px 8px 18px;border-radius:999px;box-shadow:var(--sh2);animation:rise .3s var(--ease);font-size:14px;font-weight:600;white-space:nowrap}
+.cmpbar .btn{min-height:38px;padding:6px 16px}
+@keyframes rise{from{transform:translate(-50%,20px);opacity:0}to{transform:translateX(-50%);opacity:1}}
+.sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.sum div{display:grid;gap:2px;min-width:0;background:var(--accent-soft);border-radius:var(--r2);padding:12px}
+.sum span{font-size:11.5px;color:var(--muted);font-weight:600} .sum b{font-size:18px;font-weight:800;letter-spacing:-.02em;color:var(--accent)}
+.banner{background:var(--warn-soft);color:var(--warn);padding:12px 14px;border-radius:var(--r2);font-size:13.5px;font-weight:600}
+.keybox{display:grid;gap:8px;padding:12px 14px;border-radius:var(--r2);background:var(--surface2);min-width:0}
+.keybox .row{flex-wrap:wrap}
+.keybox .num{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.keybox .btn{background:var(--surface)}
+.howto{margin:8px 0 0;padding-left:20px;font-size:13.5px;color:var(--muted);display:grid;gap:6px}
+.connect{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:var(--accent-soft);padding:12px 14px;border-radius:var(--r2);font-size:13.5px;font-weight:600}
+.install{background:var(--accent-soft);box-shadow:none}
+
+/* Tab-Leiste (schwebend) */
+.tabbar{position:fixed;z-index:6;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 10px);
+  max-width:560px;margin:0 auto;background:color-mix(in srgb,var(--surface) 84%,transparent);backdrop-filter:saturate(1.6) blur(20px);-webkit-backdrop-filter:saturate(1.6) blur(20px);
+  border-radius:26px;box-shadow:var(--sh2),0 0 0 1px var(--line)}
+.tabbar .in{display:grid;grid-template-columns:repeat(5,1fr);height:var(--tabbar);padding:6px}
+.tabbar button{border:0;background:none;color:var(--muted);font:700 10.5px var(--font);display:grid;place-items:center;align-content:center;gap:2px;cursor:pointer;border-radius:20px;transition:color .2s,background-color .25s}
+.tabbar button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:transform .3s var(--ease)}
+.tabbar button[aria-selected="true"]{color:var(--accent);background:var(--accent-soft)}
+.tabbar button[aria-selected="true"] svg{transform:translateY(-1px) scale(1.06)}
+
+.toast{position:fixed;left:50%;bottom:calc(var(--tabbar) + env(safe-area-inset-bottom,0px) + 26px);transform:translate(-50%,30px);opacity:0;z-index:9;background:var(--fg);color:var(--bg);padding:11px 18px;border-radius:999px;font-size:14px;font-weight:700;transition:all .35s var(--ease);pointer-events:none;white-space:nowrap;box-shadow:var(--sh2)}
+.toast.show{transform:translate(-50%,0);opacity:1}
+
+/* Einführung */
+.onb{position:fixed;inset:0;z-index:20;background:var(--scrim);display:grid;align-items:end;justify-items:center;animation:fadeBg .3s;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+@keyframes fadeBg{from{background:transparent}}
+.sheet{width:100%;max-width:520px;background:var(--surface);border-radius:28px 28px 0 0;padding:14px max(22px,env(safe-area-inset-left,0px)) calc(22px + env(safe-area-inset-bottom,0px));display:grid;gap:16px;animation:sheetUp .45s var(--ease);max-height:92vh;overflow:auto}
+.sheet::before{content:"";width:40px;height:5px;border-radius:3px;background:var(--line);justify-self:center}
+@keyframes sheetUp{from{transform:translateY(100%)}}
+.sheet h2{font-size:26px;font-weight:800;letter-spacing:-.03em}
+.dots{display:flex;gap:6px;justify-content:center}
+.dots i{width:7px;height:7px;border-radius:4px;background:var(--line);transition:all .3s var(--ease)}
+.dots i.on{width:24px;background:var(--accent)}
+.big{font:800 54px/1 var(--font);color:var(--accent);letter-spacing:-.04em;text-align:center}
+.feat{display:grid;grid-template-columns:42px minmax(0,1fr);gap:12px;align-items:start;font-size:14.5px}
+.feat i{width:42px;height:42px;border-radius:13px;background:var(--accent-soft);display:grid;place-items:center}
+.feat svg{width:22px;height:22px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.slide{display:grid;gap:14px;animation:viewIn .3s var(--ease)}
+
+/* Segment-Schalter, Renovierung */
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--surface2);border-radius:14px;padding:4px;gap:4px}
+.seg button{border:0;background:transparent;color:var(--muted);font:700 13.5px var(--font);padding:9px 6px;border-radius:11px;cursor:pointer;min-height:38px;transition:background-color .25s,color .25s,box-shadow .25s}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 2px 8px rgb(16 24 40 / .1)}
+.ritems{display:grid;gap:8px}
+.ritem{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:12px 14px;background:var(--surface2);border-radius:var(--r2);box-shadow:0 0 0 1.5px transparent;transition:box-shadow .2s,background-color .2s}
+.ritem.on{background:var(--accent-soft);box-shadow:0 0 0 1.5px var(--accent)}
+.ritem input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent);margin:0}
+.ritem .rl{font-size:14.5px;font-weight:700;min-width:0}
+.ritem .rl small{display:block;font-weight:500;font-size:12px;color:var(--muted)}
+.ritem .rv{font-size:13px;font-weight:700;text-align:right;white-space:nowrap}
+.ritem .rq{grid-column:2/-1;display:none;gap:8px;align-items:center;font-size:12.5px;color:var(--muted);font-weight:600}
+.ritem.on .rq{display:flex}
+.ritem .rq input{width:96px;padding:7px 10px;font-size:15px;background:var(--surface)}
+.subox{display:grid;gap:10px;padding:14px;border-radius:var(--r2);background:var(--surface2)}
+.subox input{background:var(--surface)}
+.renosum{display:grid;gap:10px;padding:16px;border-radius:18px;background:linear-gradient(160deg,var(--accent-soft),color-mix(in srgb,var(--accent-soft) 40%,var(--surface)))}
+.renosum .big2{font:800 32px/1.05 var(--font);letter-spacing:-.03em;color:var(--accent)}
+.renosum .rangebar{position:relative;height:8px;border-radius:4px;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 15%,transparent),color-mix(in srgb,var(--accent) 45%,transparent))}
+.renosum .rangebar i{position:absolute;top:-5px;width:18px;height:18px;margin-left:-7px;border-radius:50%;background:var(--surface);box-shadow:0 0 0 4px var(--accent);transition:left .6s var(--ease)}
+.renosum .rr{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--muted)}
+.renosum .tax{font-size:13.5px;color:var(--fg);margin:0}
+.check{display:flex;gap:10px;align-items:center;font-size:14.5px;font-weight:700}
+.check input{width:22px;height:22px;accent-color:var(--accent);margin:0}
+
+/* Analyse */
+.mrange{display:grid;gap:6px}
+.mrange .bar{position:relative;height:10px;border-radius:5px;background:var(--surface2);margin-top:26px}
+.mrange .band{position:absolute;top:0;bottom:0;border-radius:5px;background:linear-gradient(90deg,color-mix(in srgb,var(--c1) 25%,transparent),color-mix(in srgb,var(--c1) 50%,transparent))}
+.mrange .mk{position:absolute;top:-26px;transform:translateX(-50%);font:800 11.5px var(--font);color:var(--bg);background:var(--fg);padding:2px 7px;border-radius:7px;white-space:nowrap;transition:left .8s var(--ease)}
+.mrange .mk::after{content:"";position:absolute;left:50%;top:100%;width:3px;height:14px;margin-left:-1.5px;border-radius:2px;background:var(--fg)}
+.mrange .ends{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)}
+.lscore{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start}
+.stars{display:flex;gap:4px;margin-top:4px}
+.stars i{width:16px;height:16px;border-radius:5px;background:var(--surface2);transition:background-color .4s}
+.stars i.on{background:var(--accent)}
+.kv{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:8px 16px;font-size:14px;margin:0}
+.kv dt{color:var(--muted);font-weight:500} .kv dd{margin:0;font-weight:700;min-width:0;overflow-wrap:anywhere}
+.risk{display:grid;gap:4px;padding:12px 14px;border-radius:var(--r2);background:var(--surface2);position:relative;overflow:hidden;animation:viewIn .35s var(--ease) both}
+.risk::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--line)}
+.risk.hoch::before{background:var(--bad)} .risk.mittel::before{background:var(--warn)} .risk.niedrig::before{background:var(--good)}
+.risk b{font-size:14.5px}
+.list{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px}
+.links{display:flex;flex-wrap:wrap;gap:8px}
+.links a{font-size:13.5px;text-decoration:none;color:var(--accent);background:var(--accent-soft);padding:8px 13px;border-radius:999px;font-weight:700}
+.src{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+
+/* Strategie */
+.assume{display:flex;flex-wrap:wrap;gap:6px}
+.assume span{font-size:12px;background:var(--surface2);padding:5px 10px;border-radius:999px;color:var(--muted);font-weight:600}
+.assume b{color:var(--fg);font-weight:800}
+#goAssume{color:var(--accent);font-weight:700;text-decoration:none}
+.timeline{list-style:none;margin:0;padding:0 0 0 6px;display:grid}
+.timeline li{position:relative;padding:0 0 18px 28px;animation:viewIn .4s var(--ease) both}
+.timeline li::before{content:"";position:absolute;left:5px;top:8px;bottom:-8px;width:2px;background:var(--line)}
+.timeline li:last-child::before{display:none}
+.timeline li::after{content:"";position:absolute;left:0;top:3px;width:12px;height:12px;border-radius:50%;background:var(--surface);box-shadow:0 0 0 2.5px var(--accent) inset}
+.timeline li.done::after{background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.timeline li.warn::after{box-shadow:0 0 0 2.5px var(--warn) inset}
+.timeline .y{font-size:12px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.04em}
+.timeline .t{font-weight:750;font-size:15px}
+.timeline .d{font-size:13.5px;color:var(--muted)}
+.rente{background:radial-gradient(120% 100% at 100% 0%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 60%),var(--surface)}
+.rente .big3{font:800 40px/1.05 var(--font);letter-spacing:-.035em;color:var(--accent)}
+.tipbox{display:grid;gap:4px;padding:14px;border-radius:var(--r2);background:var(--surface2);font-size:14px}
+#exitTable tr.bestrow td{font-weight:800;color:var(--accent)}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.chart .draw{stroke-dashoffset:0}.chart .fade{opacity:.12}}
+</style>
+<!--STYLE-END-->
+</head>
+<body>
+<!--BODY-START-->
+<header class="top"><div class="in"><h1>Exposé-Rechner</h1><small id="hello"></small></div></header>
+
+<main>
+  <!-- ===================== RECHNEN ===================== -->
+  <section id="view-calc">
+    <div class="ptitle"><h1>Rechnen</h1><p>Exposé einlesen und mit deinem Steuersatz kalkulieren</p></div>
+    <div class="card install" id="installHint" hidden>
+      <div class="row between"><h2>Als App installieren</h2><button class="btn ghost small" id="hideInstall">Ausblenden</button></div>
+      <p class="note">In Safari unten auf <b>Teilen</b> tippen, dann <b>„Zum Home-Bildschirm“</b>. Danach startet der Exposé-Rechner wie eine normale App.</p>
+    </div>
+
+    <div class="card">
+      <div class="row between"><h2>Exposé einlesen</h2><button class="btn ghost small" id="btnDemo" type="button">Beispiel ansehen</button></div>
+      <div class="linkrow">
+        <input id="link" type="url" inputmode="url" autocomplete="off" placeholder="Exposé-Link">
+        <button class="btn small" id="btnPaste" type="button">Einfügen</button>
+      </div>
+      <div class="attach">
+        <label class="btn small" for="files">Screenshots / PDF</label>
+        <input type="file" id="files" accept="image/*,application/pdf" multiple hidden>
+        <button class="btn small" type="button" id="btnText">Text einfügen</button>
+      </div>
+      <textarea id="exText" placeholder="Exposé-Text hier einfügen (optional)" hidden></textarea>
+      <p class="note" id="importHint"></p>
+      <div class="chips" id="chips"></div>
+      <div class="connect" id="keyHint" hidden><span><b>Kostenloser Modus:</b> Exposé-Text einfügen, die App liest ihn direkt auf dem iPhone aus. KI-Analyse für Screenshots, Lage und Risiken ist optional.</span><button class="btn small" id="btnGoKey" type="button">KI optional</button></div>
+      <button class="btn primary block" id="btnImport">Auslesen, analysieren &amp; kalkulieren</button>
+      <div class="scan" id="scan" hidden>
+        <div class="step" id="st1"><i></i><span>Exposé abrufen</span></div>
+        <div class="step" id="st2"><i></i><span>Daten, Lage &amp; Risiken analysieren</span></div>
+        <div class="step" id="st3"><i></i><span>Mit deinem Steuerprofil rechnen</span></div>
+      </div>
+      <div class="status" id="status" role="status"></div>
+      <ul class="notes" id="importNotes" hidden></ul>
+      <button class="btn block" id="btnToAnalyse" hidden>Exposé-Analyse ansehen →</button>
+    </div>
+
+    <!-- Ergebnis -->
+    <div class="card hero" id="resultCard">
+      <div class="row between"><h2>Ergebnis</h2><span class="row"><span class="tag" id="exampleTag">Beispiel</span><span class="tag scen" id="renoTag" hidden>inkl. Sanierung</span><span class="tag scen" id="scenTag" hidden>Szenario</span></span></div>
+      <div class="scorerow">
+        <div class="ring" id="ring"><svg viewBox="0 0 120 120"><circle class="trk" cx="60" cy="60" r="50"/><circle class="arc" id="ringArc" cx="60" cy="60" r="50" stroke-dasharray="314.16" stroke-dashoffset="314.16"/></svg>
+          <div class="mid"><b id="scoreNum">–</b><span>von 100</span></div></div>
+        <div style="min-width:0">
+          <div class="grade"><span>Deal-Score</span><span class="pill" id="gradePill">–</span></div>
+          <p class="verdict" id="verdict"></p>
+        </div>
+      </div>
+      <div class="subs" id="subs"></div>
+      <div class="kpis">
+        <div class="kpi hl"><span>Cashflow nach Steuern</span><b id="k_cfn">–</b><small id="k_cfn_d"></small></div>
+        <div class="kpi hl"><span>Dein Steuereffekt / Monat</span><b id="k_st">–</b><small>bei <span id="k_gs">–</span> Grenzsatz</small></div>
+        <div class="kpi"><span>Cashflow vor Steuern</span><b id="k_cfv">–</b><small id="k_yr"></small></div>
+        <div class="kpi"><span>Bruttomietrendite</span><b id="k_br">–</b><small id="k_fak"></small></div>
+        <div class="kpi"><span>Nettomietrendite</span><b id="k_nr">–</b><small></small></div>
+        <div class="kpi"><span>Eigenkapital</span><b id="k_ek">–</b><small id="k_ekr"></small></div>
+      </div>
+      <a id="exLink" class="note" target="_blank" rel="noopener" hidden>Original-Exposé öffnen ↗</a>
+    </div>
+
+    <!-- Wasserfall -->
+    <div class="card">
+      <div class="row between"><h2>Wohin die Miete fließt</h2><span class="note" id="wfYear">pro Monat, Jahr 1</span></div>
+      <div class="legend"><span><i style="background:var(--c1)"></i>Zufluss</span><span><i style="background:var(--c2)"></i>Abfluss</span><span><i style="background:var(--fg)"></i>Ergebnis</span></div>
+      <div class="chart"><div class="wf" id="wf"></div><div class="tip" id="wfTip" hidden></div></div>
+      <div class="wfl"><span>Miete</span><span>Ausfall</span><span>Kosten</span><span>Zinsen</span><span>Tilgung</span><span>Steuer</span><span>Cashflow</span></div>
+    </div>
+
+    <!-- Szenario -->
+    <div class="card">
+      <div class="row between"><h2>Was wäre, wenn?</h2><button class="btn ghost small" id="scenReset" hidden>Zurücksetzen</button></div>
+      <p class="note">Schieb die Regler und sieh sofort, wie sich Cashflow und Score verändern. Das Objekt bleibt unverändert, bis du übernimmst.</p>
+      <div class="sl"><div class="h"><span>Kaufpreis verhandeln</span><b id="sv_kp"></b></div><input type="range" id="s_kp" min="-30" max="10" step="1" value="0" aria-label="Kaufpreis ändern in Prozent"></div>
+      <div class="sl"><div class="h"><span>Sollzins</span><b id="sv_zins"></b></div><input type="range" id="s_zins" min="1" max="7" step="0.05" value="3.6" aria-label="Sollzins"></div>
+      <div class="sl"><div class="h"><span>Kaltmiete</span><b id="sv_miete"></b></div><input type="range" id="s_miete" min="-20" max="30" step="1" value="0" aria-label="Kaltmiete ändern in Prozent"></div>
+      <div class="sl"><div class="h"><span>Eigenkapital</span><b id="sv_ek"></b></div><input type="range" id="s_ek" min="0" max="100000" step="1000" value="0" aria-label="Eigenkapital in Euro"></div>
+      <div class="delta"><span>Cashflow nach Steuern<br><small class="note">pro Monat, gegenüber Exposé</small></span><b id="scenDelta">±0 €</b></div>
+      <div class="target" id="target"></div>
+      <button class="btn block" id="scenApply" hidden>Szenario ins Objekt übernehmen</button>
+    </div>
+
+    <!-- Renovierungsrechner -->
+    <div class="card" id="renoCard">
+      <div class="row between"><h2>Renovierungsrechner</h2><span class="pill" id="renoPill">aus</span></div>
+      <p class="note">Erste Kosteneinschätzung bei Sanierungsstau. Richtwerte für Handwerkerpreise in Deutschland 2025/26, brutto inkl. 19 % MwSt., ohne Förderung. Ersetzt kein Angebot vom Fachbetrieb.</p>
+      <div class="seg" id="renoMode" role="group" aria-label="Objektart">
+        <button type="button" data-v="wohnung">Eigentumswohnung</button><button type="button" data-v="haus">Haus</button>
+      </div>
+      <div class="seg" id="renoStd" role="group" aria-label="Ausstattungsstandard">
+        <button type="button" data-v="0">Einfach</button><button type="button" data-v="1">Mittel</button><button type="button" data-v="2">Gehoben</button>
+      </div>
+      <div class="ritems" id="renoItems"></div>
+      <div id="suBox" class="subox">
+        <h3>Sonderumlage Gemeinschaftseigentum</h3>
+        <p class="note">Dach, Fassade, Fenster, Leitungsstränge und Zentralheizung gehören in einer WEG meist der Gemeinschaft. Dein Anteil richtet sich nach deinen Miteigentumsanteilen (MEA, siehe Teilungserklärung).</p>
+        <div class="fields">
+          <div class="f"><label for="su_gesamt"><span>Kosten der Maßnahme</span><em>€ gesamt</em></label><input id="su_gesamt" class="num" inputmode="decimal" type="text" placeholder="0"></div>
+          <div class="f"><label for="su_mea"><span>Deine MEA</span><em>‰</em></label><input id="su_mea" class="num" inputmode="decimal" type="text" placeholder="z. B. 45"></div>
+          <div class="f wide"><label for="su_rl"><span>davon aus Rücklage gedeckt</span><em>%</em></label><input id="su_rl" class="num" inputmode="decimal" type="text" placeholder="0"></div>
+        </div>
+        <p class="note" id="suOut"></p>
+      </div>
+      <div class="fields">
+        <div class="f"><label for="r_puffer"><span>Unvorhergesehenes</span><em>%</em></label><input id="r_puffer" class="num" inputmode="decimal" type="text"></div>
+        <div class="f"><label for="r_leer"><span>Leerstand Bauzeit</span><em>Monate</em></label><input id="r_leer" class="num" inputmode="decimal" type="text" placeholder="0"></div>
+        <div class="f"><label for="r_mehr"><span>Mehrmiete danach</span><em>€/Mon.</em></label><input id="r_mehr" class="num" inputmode="decimal" type="text" placeholder="0"></div>
+        <div class="f"><label for="r_fin">Finanzierung</label><select id="r_fin"><option value="ek">aus Eigenkapital</option><option value="kredit">mitfinanzieren</option></select></div>
+      </div>
+      <div class="renosum" id="renoSum"></div>
+      <label class="check"><input type="checkbox" id="r_aktiv"> In Kalkulation und Strategie berücksichtigen</label>
+    </div>
+
+    <div class="card" id="tables"></div>
+
+    <div class="card">
+      <div class="row between"><h2 id="dealTitle">Objekt</h2><span class="note">Werte anpassen</span></div>
+      <div class="fields" id="fObj"></div>
+    </div>
+    <div class="card">
+      <div class="row between"><h2>Finanzierung</h2><span class="note">leer = aus Profil</span></div>
+      <div class="fields" id="fFin"></div>
+    </div>
+    <div class="row">
+      <button class="btn primary" id="btnSave">Objekt speichern</button>
+      <button class="btn" id="btnNew">Neues Objekt</button>
+    </div>
+  </section>
+
+  <!-- ===================== ANALYSE ===================== -->
+  <section id="view-analyse" hidden>
+    <div class="ptitle"><h1>Analyse</h1><p>Markt, Lage, Risiken und Details</p></div>
+    <div class="card" id="anaEmpty">
+      <h2>Exposé-Analyse</h2>
+      <p class="note">Hier erscheinen nach dem Einlesen alle Details aus dem Exposé, eine erste Markteinschätzung, die Lagebewertung, Risiken und Fragen an den Makler.</p>
+      <div class="row"><button class="btn primary" id="anaGoImport">Exposé einlesen</button><button class="btn" id="anaDemo">Beispiel ansehen</button></div>
+    </div>
+    <div id="anaBody" hidden style="display:grid;gap:14px"></div>
+  </section>
+
+  <!-- ===================== STRATEGIE ===================== -->
+  <section id="view-strat" hidden>
+    <div class="ptitle"><h1>Strategie</h1><p>Dein Plan für die nächsten Jahrzehnte</p></div>
+    <div class="card">
+      <div class="row between"><h2>Zeitraum &amp; Annahmen</h2><span class="tag scen" id="stratReno" hidden>inkl. Sanierung</span></div>
+      <p class="note" id="stratObj"></p>
+      <div class="sl"><div class="h"><span>Betrachtungszeitraum</span><b id="sv_jahre"></b></div><input type="range" id="s_jahre" min="10" max="40" step="1" value="30" aria-label="Betrachtungszeitraum in Jahren"></div>
+      <div class="assume" id="assume"></div>
+    </div>
+
+    <div class="card">
+      <h2>Meilensteine</h2>
+      <ol class="timeline" id="timeline"></ol>
+    </div>
+
+    <div class="card rente" id="renteCard"></div>
+
+    <div class="card">
+      <div class="row between"><h2 id="wTitle">Vermögensaufbau</h2><span class="note">tippen für Details</span></div>
+      <div class="legend"><span><i style="background:var(--c1)"></i>Immobilienwert</span><span><i style="background:var(--c2)"></i>Restschuld</span><span><i style="background:var(--c1);opacity:.25"></i>dein Anteil</span></div>
+      <div class="chart" id="wChart"><svg id="wSvg" viewBox="0 0 340 200" role="img" aria-label="Immobilienwert und Restschuld über die Jahre"></svg><div class="tip" id="wTip" hidden></div></div>
+      <p class="note" id="wNote"></p>
+    </div>
+
+    <div class="card">
+      <h2>Wann verkaufen?</h2>
+      <p class="note" id="exitNote"></p>
+      <div class="scroll"><table id="exitTable"></table></div>
+    </div>
+
+    <div class="card" id="tipCard"></div>
+
+    <div class="card">
+      <h2 id="projTitle">Jahr für Jahr</h2>
+      <div class="scroll"><table id="proj"></table></div>
+    </div>
+  </section>
+
+  <!-- ===================== OBJEKTE ===================== -->
+  <section id="view-deals" hidden>
+    <div class="ptitle"><h1>Objekte</h1><p>Gespeichert, bewertet und vergleichbar</p></div>
+    <div class="card" id="cmpCard" hidden>
+      <div class="row between"><h2>Vergleich</h2><button class="btn ghost small" id="cmpClose">Schließen</button></div>
+      <div class="scroll"><table class="cmp" id="cmpTable"></table></div>
+      <p class="note">★ markiert den besten Wert je Zeile.</p>
+    </div>
+    <div class="card">
+      <h2>Meine Objekte</h2>
+      <p class="note">Sortiert nach Deal-Score, immer mit deinem aktuellen Profil gerechnet. Tippe auf „Vergleichen“ bei 2–3 Objekten.</p>
+      <div id="dealList" style="display:grid;gap:10px"></div>
+    </div>
+  </section>
+
+  <!-- ===================== PROFIL ===================== -->
+  <section id="view-profile" hidden>
+    <div class="ptitle"><h1>Profil</h1><p>Steuerdaten, Annahmen und Verbindung</p></div>
+    <div class="card">
+      <h2>Mein Steuerprofil</h2>
+      <div id="profBanner" class="banner" hidden>Das sind Beispielwerte. Trage dein Einkommen ein und speichere, damit dein Steuervorteil stimmt.</div>
+      <div class="sum" id="profSum"></div>
+      <p class="note">Verluste aus Vermietung senken dein zu versteuerndes Einkommen. Die Ersparnis wird exakt nach dem Einkommensteuertarif 2026 berechnet, inklusive Soli und Kirchensteuer.</p>
+      <div class="fields" id="fTax"></div>
+    </div>
+    <div class="card">
+      <h2>Standardwerte &amp; Annahmen</h2>
+      <div class="fields" id="fDef"></div>
+    </div>
+    <button class="btn primary block" id="btnProf">Profil speichern</button>
+
+    <div class="card" id="keyCard">
+      <div class="row between"><h2>Claude-Verbindung</h2><span class="pill" id="keyPill">nicht verbunden</span></div>
+      <p class="note">Die App liest Exposés mit deinem persönlichen Claude-API-Schlüssel aus. Er wird nur auf diesem iPhone gespeichert und nur direkt an Anthropic gesendet. In der Datensicherung ist er nicht enthalten.</p>
+      <div id="keyEdit" style="display:grid;gap:10px">
+        <div class="f"><label for="apiKey">API-Schlüssel</label><input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-ant-…"></div>
+        <div class="row"><button class="btn primary" id="btnKey">Speichern &amp; testen</button><button class="btn ghost small" id="btnKeyCancel" hidden>Abbrechen</button></div>
+      </div>
+      <div class="keybox" id="keyShow" hidden><span class="num" id="keyMask"></span><span class="row"><button class="btn small" id="btnKeyTest">Testen</button><button class="btn small" id="btnKeyChange">Ändern</button><button class="btn ghost small" id="btnKeyDel">Entfernen</button></span></div>
+      <span class="status" id="keyStatus" role="status"></span>
+      <div class="f"><label for="model">Modell</label>
+        <select id="model">
+          <option value="claude-opus-5-5">Opus 5.5 · am genauesten · 5–15 Ct.</option>
+          <option value="claude-sonnet-5-5">Sonnet 5.5 · schnell · 3–8 Ct.</option>
+          <option value="claude-haiku-5-5">Haiku 5.5 · günstig · ca. 1 Ct.</option>
+        </select></div>
+      <details id="keyHowto"><summary>So bekommst du deinen Schlüssel (5 Minuten)</summary>
+        <ol class="howto">
+          <li>Öffne <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a> und melde dich an oder registriere dich. Das ist ein eigenes Konto, getrennt von deinem Claude-Abo.</li>
+          <li>Unter <b>Plans &amp; Billing</b> Guthaben aufladen, z. B. 5 $. Das reicht für rund 40–100 Analysen mit Opus.</li>
+          <li>Unter <b>Limits</b> ein monatliches Ausgabenlimit setzen, z. B. 5 $. Mehr kann dann nie abgebucht werden.</li>
+          <li>Unter <b>API Keys</b> → <b>Create Key</b> einen Schlüssel mit dem Namen „Exposé-Rechner iPhone“ anlegen und kopieren.</li>
+          <li>Hier einfügen und auf <b>Speichern &amp; testen</b> tippen.</li>
+        </ol>
+        <p class="note">Für den Marktcheck mit Websuche muss die Websuche in der Konsole erlaubt sein (Einstellungen deiner Organisation). Websuchen kosten zusätzlich rund 1 Cent pro Suche.</p>
+        <p class="note">Falls das iPhone verloren geht: Schlüssel in der Konsole löschen. Danach ist er sofort wertlos.</p>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>Datensicherung</h2>
+      <p class="note" id="bkHint">Profil und Objekte liegen nur auf diesem Gerät. Kopiere die Sicherung z. B. in die Notizen-App, um sie auf ein anderes Gerät zu übertragen.</p>
+      <div class="row"><button class="btn small" id="btnExport">Sicherung kopieren</button><button class="btn small" id="btnImportBk">Sicherung einspielen</button><button class="btn small" id="btnOnb">Einführung zeigen</button></div>
+      <textarea id="backup" hidden placeholder="Sicherung hier einfügen und erneut auf „Sicherung einspielen“ tippen"></textarea>
+      <span class="status" id="bkStatus"></span>
+    </div>
+  </section>
+</main>
+
+<div class="cmpbar" id="cmpBar" hidden><span id="cmpCount"></span><button class="btn primary small" id="cmpGo">Vergleichen</button></div>
+
+<nav class="tabbar" role="tablist"><div class="in">
+  <button role="tab" id="tab-calc" aria-selected="true" data-view="calc"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M8 15h2M12 15h2M8 18h2M12 18h2M16 11v7"/></svg>Rechnen</button>
+  <button role="tab" id="tab-analyse" aria-selected="false" data-view="analyse"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M8.5 11h5M11 8.5v5"/></svg>Analyse</button>
+  <button role="tab" id="tab-strat" aria-selected="false" data-view="strat"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M5 15l4-4 3 3 7-7"/><path d="M15 7h4v4"/></svg>Strategie</button>
+  <button role="tab" id="tab-deals" aria-selected="false" data-view="deals"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg><span>Objekte<span id="dealCount"></span></span></button>
+  <button role="tab" id="tab-profile" aria-selected="false" data-view="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Profil</button>
+</div></nav>
+
+<div class="toast" id="toast" role="status"></div>
+
+<div class="onb" id="onb" hidden><div class="sheet" id="sheet"></div></div>
+<!--BODY-END-->
+<script src="app.js"></script>
+</body>
+</html>
